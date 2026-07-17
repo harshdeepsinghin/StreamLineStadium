@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /incidents/{incidentId} {
+      // The Ops Dashboard is a public demo, so we allow client-side reads for real-time listeners.
+      allow read: if true;
+      
+      // All writes (creation, updates, resolutions) MUST go through Next.js server-side API endpoints.
+      // Since Server APIs use the Admin SDK, they bypass these client-side security rules.
+      allow write: if false;
+    }
+  }
+}
