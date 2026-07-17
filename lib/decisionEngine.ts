@@ -85,7 +85,7 @@ export function getFallbackIncident(text: string): StructuredIncident {
     severity = 'Critical';
   } else if (lowercase.includes('fight') || lowercase.includes('injury') || lowercase.includes('crush') || lowercase.includes('broken bone')) {
     severity = 'High';
-  } else if (lowercase.includes('slow') || lowercase.includes('clogged') || lowercase.includes('leak') || lowercase.includes('lost')) {
+  } else if (lowercase.includes('slow') || lowercase.includes('clogged') || lowercase.includes('leak') || lowercase.includes('lost') || lowercase.includes('queue') || lowercase.includes('bottleneck') || lowercase.includes('congestion')) {
     severity = 'Medium';
   }
 
