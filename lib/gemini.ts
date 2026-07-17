@@ -8,7 +8,7 @@ const useEnterprise = process.env.GOOGLE_GENAI_USE_ENTERPRISE === 'true' || !pro
 const ai = new GoogleGenAI(
   useEnterprise
     ? {
-        projectId: process.env.GOOGLE_CLOUD_PROJECT || 'hack2skill-a226e',
+        project: process.env.GOOGLE_CLOUD_PROJECT || 'hack2skill-a226e',
         location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
       }
     : { apiKey: process.env.GEMINI_API_KEY }

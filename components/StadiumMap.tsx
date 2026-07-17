@@ -77,14 +77,14 @@ export default function StadiumMap({
               return (
                 <g key={zone.id} className="cursor-pointer" onClick={() => onSelectZone(isSelected ? null : zone.id)}>
                   <circle
-                    cx={zone.cx}
-                    cy={zone.cy}
-                    r={zone.r}
+                    cx={zone.cx!}
+                    cy={zone.cy!}
+                    r={zone.r!}
                     className={`${colorClass} ${borderStroke} transition-all duration-300`}
                   />
                   <text
-                    x={zone.cx}
-                    y={zone.cy + 4}
+                    x={zone.cx!}
+                    y={zone.cy! + 4}
                     textAnchor="middle"
                     className={`text-[9px] font-bold fill-slate-300 pointer-events-none ${
                       count > 0 ? 'fill-white' : ''

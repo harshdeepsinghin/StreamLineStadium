@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db, Incident } from '@/lib/firestore';
 import { extractIncident, generateRecommendations } from '@/lib/gemini';
 
@@ -53,8 +53,8 @@ export async function POST(request: Request) {
       ...structuredData,
       status: 'reported',
       active: true,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       recommendations,
     };
 

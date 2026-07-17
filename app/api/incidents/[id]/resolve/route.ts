@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firestore';
 
 const schema = z.object({
@@ -38,7 +38,7 @@ export async function POST(
       status: resolutionStatus,
       active: false,
       resolutionNotes: notes || '',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ success: true, id, status: resolutionStatus });

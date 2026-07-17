@@ -1,13 +1,14 @@
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
+if (!getApps().length) {
+  initializeApp({
+    credential: applicationDefault(),
     projectId: process.env.GOOGLE_CLOUD_PROJECT || 'hack2skill-a226e',
   });
 }
 
-export const db = admin.firestore();
+export const db = getFirestore();
 
 export interface Incident {
   id: string;
