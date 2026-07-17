@@ -42,4 +42,5 @@ next-env.d.ts
 
 # local custom ignore
 /misc/
+firebase-debug.log
 
