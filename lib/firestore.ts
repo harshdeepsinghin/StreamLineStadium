@@ -1,11 +1,30 @@
-import { initializeApp, getApps, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, applicationDefault, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 if (!getApps().length) {
-  initializeApp({
-    credential: applicationDefault(),
-    projectId: process.env.GOOGLE_CLOUD_PROJECT || 'hack2skill-a226e',
-  });
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+  if (serviceAccountKey) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountKey);
+      initializeApp({
+        credential: cert(serviceAccount),
+        projectId: process.env.GOOGLE_CLOUD_PROJECT || serviceAccount.project_id || 'winter-time-304723',
+      });
+    } catch (err) {
+      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY JSON:', err);
+      // Fallback to ADC
+      initializeApp({
+        credential: applicationDefault(),
+        projectId: process.env.GOOGLE_CLOUD_PROJECT || 'winter-time-304723',
+      });
+    }
+  } else {
+    initializeApp({
+      credential: applicationDefault(),
+      projectId: process.env.GOOGLE_CLOUD_PROJECT || 'winter-time-304723',
+    });
+  }
 }
 
 export const db = getFirestore();
