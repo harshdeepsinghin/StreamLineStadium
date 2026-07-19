@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase, Incident } from '@/lib/supabaseClient';
 import StadiumMap from '@/components/StadiumMap';
 import IncidentFeed from '@/components/IncidentFeed';
@@ -34,7 +34,7 @@ export default function Home() {
   // Resolving states
   const [isResolving, setIsResolving] = useState(false);
 
-  // 1. Hook up Supabase Real-time Listener
+  // 1. Hook up Supabase Real-time Listener (Highly optimized delta updates)
   useEffect(() => {
     const fetchIncidents = async () => {
       const { data, error } = await supabase
@@ -71,8 +71,30 @@ export default function Home() {
           schema: 'public',
           table: 'incidents',
         },
-        () => {
-          fetchIncidents();
+        (payload) => {
+          // Process delta updates client-side to prevent redundant refetches
+          if (payload.eventType === 'INSERT') {
+            const newIncident = payload.new as Incident;
+            setIncidents((prev) => {
+              if (prev.some((inc) => inc.id === newIncident.id)) return prev;
+              return [newIncident, ...prev].slice(0, 50);
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedIncident = payload.new as Incident;
+            setIncidents((prev) =>
+              prev.map((inc) => (inc.id === updatedIncident.id ? updatedIncident : inc))
+            );
+            setSelectedIncident((prev) => {
+              if (prev?.id === updatedIncident.id) {
+                return updatedIncident;
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedIncident = payload.old as { id: string };
+            setIncidents((prev) => prev.filter((inc) => inc.id !== deletedIncident.id));
+            setSelectedIncident((prev) => (prev?.id === deletedIncident.id ? null : prev));
+          }
         }
       )
       .subscribe();
@@ -82,26 +104,32 @@ export default function Home() {
     };
   }, []);
 
-  // 2. Statistics derivation
-  const activeIncidents = incidents.filter(inc => inc.active);
-  const resolvedIncidents = incidents.filter(inc => !inc.active);
+  // 2. Statistics derivation (memoized for efficiency)
+  const activeIncidents = useMemo(() => incidents.filter(inc => inc.active), [incidents]);
+  const resolvedIncidents = useMemo(() => incidents.filter(inc => !inc.active), [incidents]);
   
   // Group active incident counts by zone for the map
-  const activeIncidentsByZone = activeIncidents.reduce((acc, inc) => {
-    acc[inc.location] = (acc[inc.location] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const activeIncidentsByZone = useMemo(() => {
+    return activeIncidents.reduce((acc, inc) => {
+      acc[inc.location] = (acc[inc.location] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [activeIncidents]);
 
-  const highSeverityCount = activeIncidents.filter(
-    inc => inc.severity === 'High' || inc.severity === 'Critical'
-  ).length;
+  const highSeverityCount = useMemo(() => {
+    return activeIncidents.filter(
+      inc => inc.severity === 'High' || inc.severity === 'Critical'
+    ).length;
+  }, [activeIncidents]);
 
   // Filtered incidents for dashboard display
-  const displayedIncidents = incidents.filter(inc => {
-    const matchesActive = showResolvedHistory ? !inc.active : inc.active;
-    const matchesZone = selectedZone ? inc.location === selectedZone : true;
-    return matchesActive && matchesZone;
-  });
+  const displayedIncidents = useMemo(() => {
+    return incidents.filter(inc => {
+      const matchesActive = showResolvedHistory ? !inc.active : inc.active;
+      const matchesZone = selectedZone ? inc.location === selectedZone : true;
+      return matchesActive && matchesZone;
+    });
+  }, [incidents, showResolvedHistory, selectedZone]);
 
   // 3. Quick Tag Selection helper
   const handleQuickTag = (text: string) => {

@@ -56,7 +56,9 @@ export default function StadiumMap({
           )}
         </div>
 
-        <svg viewBox="0 0 600 400" className="w-full h-auto select-none">
+        <svg viewBox="0 0 600 400" className="w-full h-auto select-none" aria-label="Stadium map zones">
+          <title>Stadium Map</title>
+          <desc>Interactive layout of gates A, B, C, D, stands, and the pitch. Select a zone to filter incidents.</desc>
           {/* Stadium outer track line */}
           <ellipse
             cx="300"

@@ -169,10 +169,11 @@ export default function DecisionCard({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t border-slate-850">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label htmlFor="resolution-notes" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Resolution Notes / Log Details
             </label>
             <textarea
+              id="resolution-notes"
               required
               rows={2}
               value={notes}
