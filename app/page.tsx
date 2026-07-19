@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { clientDb } from '@/lib/firebaseClient';
-import { Incident } from '@/lib/firestore';
+import { supabase, Incident } from '@/lib/supabaseClient';
 import StadiumMap from '@/components/StadiumMap';
 import IncidentFeed from '@/components/IncidentFeed';
 import DecisionCard from '@/components/DecisionCard';
@@ -11,15 +9,12 @@ import {
   PlusCircle, 
   LayoutDashboard, 
   ClipboardList, 
-  MapPin, 
   Users, 
   Activity, 
   Clock, 
   Sparkles, 
-  User, 
   Loader2,
-  CheckCircle,
-  HelpCircle
+  CheckCircle
 } from 'lucide-react';
 
 export default function Home() {
@@ -39,27 +34,52 @@ export default function Home() {
   // Resolving states
   const [isResolving, setIsResolving] = useState(false);
 
-  // 1. Hook up Firestore Real-time Listener
+  // 1. Hook up Supabase Real-time Listener
   useEffect(() => {
-    const q = query(collection(clientDb, 'incidents'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list: Incident[] = [];
-      snapshot.forEach((doc) => {
-        list.push(doc.data() as Incident);
-      });
-      setIncidents(list);
-      
-      // Update selected incident reference if it changed
-      if (selectedIncident) {
-        const updated = list.find(inc => inc.id === selectedIncident.id);
-        if (updated) setSelectedIncident(updated);
+    const fetchIncidents = async () => {
+      const { data, error } = await supabase
+        .from('incidents')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      if (error) {
+        console.error("Error fetching initial incidents:", error);
+      } else if (data) {
+        const list = data as Incident[];
+        setIncidents(list);
+        
+        // Update selected incident reference if it changed
+        setSelectedIncident((prev) => {
+          if (!prev) return null;
+          const updated = list.find(inc => inc.id === prev.id);
+          if (updated && JSON.stringify(updated) !== JSON.stringify(prev)) {
+            return updated;
+          }
+          return updated ? prev : null;
+        });
       }
-    }, (error) => {
-      console.error("Firestore live listener error:", error);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [selectedIncident]);
+    fetchIncidents();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'incidents',
+        },
+        () => {
+          fetchIncidents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // 2. Statistics derivation
   const activeIncidents = incidents.filter(inc => inc.active);

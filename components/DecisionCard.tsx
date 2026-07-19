@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Incident } from '@/lib/firestore';
+import { Incident } from '@/lib/supabaseClient';
 import { ShieldCheck, XCircle, ArrowRight, Loader2, Sparkles, MessageSquareDot } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -82,7 +82,7 @@ export default function DecisionCard({
         <div>
           <span className="text-[10px] font-semibold text-slate-500 tracking-wider uppercase">Raw Ground Report</span>
           <p className="text-sm text-slate-300 mt-1 leading-relaxed italic">
-            "{incident.text}"
+            &ldquo;{incident.text}&rdquo;
           </p>
         </div>
         <div className="grid grid-cols-2 gap-4 pt-2.5 border-t border-slate-900">

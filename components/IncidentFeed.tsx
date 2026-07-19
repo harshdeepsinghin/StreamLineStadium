@@ -1,5 +1,5 @@
 import React from 'react';
-import { Incident } from '@/lib/firestore';
+import { Incident } from '@/lib/supabaseClient';
 import { ShieldAlert, AlertTriangle, Activity, Wrench, Search, MapPin, Clock } from 'lucide-react';
 
 interface IncidentFeedProps {
@@ -15,6 +15,20 @@ export default function IncidentFeed({
   onSelectIncident,
   title,
 }: IncidentFeedProps) {
+  const [now, setNow] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setNow(Date.now());
+    }, 0);
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 10000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
   
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -61,19 +75,23 @@ export default function IncidentFeed({
     }
   };
 
-  const formatTimestamp = (timestamp: any) => {
+  const formatTimestamp = (timestamp: { seconds?: number } | string | number | Date | null | undefined) => {
     if (!timestamp) return 'Just now';
     
     let date: Date;
-    if (timestamp.seconds) {
+    if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp && typeof timestamp.seconds === 'number') {
       date = new Date(timestamp.seconds * 1000);
-    } else if (typeof timestamp === 'string') {
+    } else if (typeof timestamp === 'string' || typeof timestamp === 'number' || timestamp instanceof Date) {
       date = new Date(timestamp);
     } else {
-      date = new Date(timestamp);
+      return 'Just now';
     }
 
-    const diff = Date.now() - date.getTime();
+    if (!now) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const diff = now - date.getTime();
     const minutes = Math.floor(diff / 60000);
     
     if (minutes < 1) return 'Just now';

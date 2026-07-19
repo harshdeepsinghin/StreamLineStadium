@@ -101,7 +101,7 @@ Input Report:
  */
 export async function generateRecommendations(
   incident: Omit<StructuredIncident, 'confidence'>,
-  recentIncidents: Array<{ category: string; location: string; timestamp: any }>
+  recentIncidents: Array<{ category: string; location: string; timestamp: unknown }>
 ): Promise<Recommendation[]> {
   try {
     const recentContext = recentIncidents.length > 0

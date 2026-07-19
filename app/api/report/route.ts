@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { FieldValue } from 'firebase-admin/firestore';
-import { db, Incident } from '@/lib/firestore';
+import { supabase, Incident } from '@/lib/supabaseClient';
 import { extractIncident, generateRecommendations } from '@/lib/gemini';
 
 const schema = z.object({
@@ -22,22 +21,23 @@ export async function POST(request: Request) {
 
     const { text } = parsed.data;
 
-    // Fetch recent incidents (last 30 minutes / latest 10) to serve as prompt context
-    const recentIncidentsSnapshot = await db
-      .collection('incidents')
-      .where('active', '==', true)
-      .orderBy('timestamp', 'desc')
-      .limit(10)
-      .get();
+    // Fetch recent incidents (latest 10 active) to serve as prompt context
+    const { data: recentIncidentsData, error: fetchError } = await supabase
+      .from('incidents')
+      .select('category, location, timestamp')
+      .eq('active', true)
+      .order('timestamp', { ascending: false })
+      .limit(10);
 
-    const recentIncidents = recentIncidentsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        category: data.category,
-        location: data.location,
-        timestamp: data.timestamp,
-      };
-    });
+    if (fetchError) {
+      console.error("Error fetching recent incidents context from Supabase:", fetchError);
+    }
+
+    const recentIncidents = (recentIncidentsData || []).map(inc => ({
+      category: inc.category,
+      location: inc.location,
+      timestamp: inc.timestamp,
+    }));
 
     // 1. Extract Structured Incident from raw text
     const structuredData = await extractIncident(text);
@@ -45,36 +45,34 @@ export async function POST(request: Request) {
     // 2. Generate recommendations based on the new incident and recent history
     const recommendations = await generateRecommendations(structuredData, recentIncidents);
 
-    // Create database document reference
-    const docRef = db.collection('incidents').doc();
+    // Create database document
+    const newId = crypto.randomUUID();
+    const timestampStr = new Date().toISOString();
     const newIncident: Incident = {
-      id: docRef.id,
+      id: newId,
       text,
       ...structuredData,
       status: 'reported',
       active: true,
-      timestamp: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      timestamp: timestampStr,
+      updatedAt: timestampStr,
       recommendations,
     };
 
-    // Save to Firestore
-    await docRef.set(newIncident);
+    // Save to Supabase
+    const { error: insertError } = await supabase
+      .from('incidents')
+      .insert(newIncident);
 
-    // Fetch the stored doc (so we return the actual timestamps format if needed)
-    const savedDoc = await docRef.get();
-    const savedData = savedDoc.data();
+    if (insertError) {
+      throw new Error(`Failed to save incident to Supabase: ${insertError.message}`);
+    }
 
-    return NextResponse.json({
-      ...newIncident,
-      // convert serverTimestamp for JSON serialization
-      timestamp: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  } catch (error: any) {
+    return NextResponse.json(newIncident);
+  } catch (error) {
     console.error('API /api/report error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
