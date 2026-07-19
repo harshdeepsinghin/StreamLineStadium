@@ -22,7 +22,7 @@ const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
  */
 export async function extractIncident(text: string): Promise<StructuredIncident> {
   try {
-    const prompt = `
+    const systemInstruction = `
 Analyze the following text reported by ground staff at a football stadium (FIFA World Cup context).
 Extract the structured incident details exactly matching the schema.
 
@@ -36,15 +36,13 @@ Guidelines:
   - 'Lost Person' for lost children or missing companions.
   - 'Other' if it doesn't fit any above.
 - Severity levels: Low, Medium, High, Critical. Critical is only for direct threats to life or immediate structural/operational collapse (e.g. fire, unconscious person, active riot).
-
-Input Report:
-"${text}"
 `;
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: prompt,
+      contents: `Input Report:\n"${text}"`,
       config: {
+        systemInstruction,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
@@ -108,12 +106,15 @@ export async function generateRecommendations(
       ? recentIncidents.map(inc => `- Category: ${inc.category}, Location: ${inc.location}`).join('\n')
       : 'None';
 
-    const prompt = `
+    const systemInstruction = `
 You are the AI Operations Copilot at a FIFA World Cup Stadium.
-Given a new incident and the recent operational context, recommend exactly 2-3 ranked actions for the Ops Manager.
+Given a new incident, the recent operational context, and current match status, recommend exactly 2-3 ranked actions for the Ops Manager.
 Provide clear, actionable, one-sentence reasoning for each recommendation.
-The reasoning should justify why this action is ranked at this level of priority based on standard operating procedures (SOP).
+The reasoning must justify why this action is ranked at this priority level based on standard operating procedures (SOP).
+Recommend action list ordered by priority (1 = highest).
+`;
 
+    const contents = `
 New Incident:
 - Location: ${incident.location}
 - Category: ${incident.category}
@@ -125,14 +126,13 @@ ${recentContext}
 
 Match Status:
 - Live: Second Half (Minute 72, Score: 1-1, high-tension match)
-
-Recommend action list ordered by priority (1 = highest).
 `;
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: prompt,
+      contents,
       config: {
+        systemInstruction,
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,

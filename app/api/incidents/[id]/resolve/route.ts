@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseClient';
 
 const schema = z.object({
   resolutionStatus: z.enum(['resolved', 'dismissed']),
@@ -26,7 +26,7 @@ export async function POST(
     const { resolutionStatus, notes } = parsed.data;
 
     // Check if incident exists
-    const { data: incident, error: selectError } = await supabase
+    const { data: incident, error: selectError } = await supabaseAdmin
       .from('incidents')
       .select('id')
       .eq('id', id)
@@ -41,7 +41,7 @@ export async function POST(
     }
 
     // Update in Supabase
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('incidents')
       .update({
         status: resolutionStatus,

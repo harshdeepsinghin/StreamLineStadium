@@ -73,9 +73,29 @@ export default function StadiumMap({
             const colorClass = getColorClass(zone.id);
             const borderStroke = isSelected ? 'stroke-cyan-400 stroke-[3px]' : 'stroke-[1.5px]';
 
+            const handleSelect = () => {
+              onSelectZone(isSelected ? null : zone.id);
+            };
+
+            const handleKeyDown = (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSelect();
+              }
+            };
+
             if (zone.type === 'gate') {
               return (
-                <g key={zone.id} className="cursor-pointer" onClick={() => onSelectZone(isSelected ? null : zone.id)}>
+                <g 
+                  key={zone.id} 
+                  className="cursor-pointer focus:outline-none focus:stroke-cyan-400" 
+                  onClick={handleSelect}
+                  onKeyDown={handleKeyDown}
+                  tabIndex={0}
+                  role="button"
+                  aria-pressed={isSelected}
+                  aria-label={`Filter incidents for ${zone.label}. Current active incidents: ${count}`}
+                >
                   <circle
                     cx={zone.cx!}
                     cy={zone.cy!}
@@ -116,7 +136,16 @@ export default function StadiumMap({
 
             // Stand or Pitch (rectangles)
             return (
-              <g key={zone.id} className="cursor-pointer" onClick={() => onSelectZone(isSelected ? null : zone.id)}>
+              <g 
+                key={zone.id} 
+                className="cursor-pointer focus:outline-none focus:stroke-cyan-400" 
+                onClick={handleSelect}
+                onKeyDown={handleKeyDown}
+                tabIndex={0}
+                role="button"
+                aria-pressed={isSelected}
+                aria-label={`Filter incidents for ${zone.label}. Current active incidents: ${count}`}
+              >
                 <rect
                   x={zone.x}
                   y={zone.y}

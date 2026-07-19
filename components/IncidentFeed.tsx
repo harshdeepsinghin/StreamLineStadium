@@ -127,7 +127,17 @@ export default function IncidentFeed({
               <div
                 key={incident.id}
                 onClick={() => onSelectIncident(incident)}
-                className={`relative group cursor-pointer border rounded-xl p-4 transition-all duration-300 ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectIncident(incident);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-pressed={isSelected}
+                aria-label={`Incident in ${incident.location}, category: ${incident.category}, severity: ${incident.severity}. Description: ${incident.description}. Click to inspect.`}
+                className={`relative group cursor-pointer border rounded-xl p-4 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
                   isSelected
                     ? 'bg-slate-800/80 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                     : 'bg-slate-900/40 border-slate-800/60 hover:bg-slate-800/40 hover:border-slate-700'

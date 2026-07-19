@@ -40,7 +40,8 @@ export default function Home() {
       const { data, error } = await supabase
         .from('incidents')
         .select('*')
-        .order('timestamp', { ascending: false });
+        .order('timestamp', { ascending: false })
+        .limit(50);
       if (error) {
         console.error("Error fetching initial incidents:", error);
       } else if (data) {
@@ -208,9 +209,12 @@ export default function Home() {
         </div>
 
         {/* Interactive Role Switcher */}
-        <div className="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+        <div className="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800" role="tablist" aria-label="View Switcher">
           <button
             onClick={() => setRole('reporter')}
+            role="tab"
+            aria-selected={role === 'reporter'}
+            aria-controls="panel-reporter"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
               role === 'reporter'
                 ? 'bg-slate-800 text-cyan-400 shadow'
@@ -223,6 +227,9 @@ export default function Home() {
           </button>
           <button
             onClick={() => setRole('dashboard')}
+            role="tab"
+            aria-selected={role === 'dashboard'}
+            aria-controls="panel-dashboard"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
               role === 'dashboard'
                 ? 'bg-slate-800 text-cyan-400 shadow'
@@ -241,7 +248,7 @@ export default function Home() {
         
         {/* REPORTER ROLE VIEW */}
         {role === 'reporter' && (
-          <section aria-label="Reporter Intake Panel" className="max-w-2xl mx-auto space-y-6">
+          <section id="panel-reporter" role="tabpanel" aria-labelledby="btn-role-reporter" className="max-w-2xl mx-auto space-y-6">
             <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-2xl space-y-6">
               <div className="border-b border-slate-800/80 pb-4">
                 <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
@@ -353,7 +360,7 @@ export default function Home() {
 
         {/* OPS MANAGER DASHBOARD VIEW */}
         {role === 'dashboard' && (
-          <section aria-label="Operations Dashboard" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <section id="panel-dashboard" role="tabpanel" aria-labelledby="btn-role-dashboard" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* Left 4 Cols: Stadium Map & Quick Stats */}
             <div className="lg:col-span-4 space-y-6">

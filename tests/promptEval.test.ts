@@ -48,7 +48,7 @@ describe('Prompt Evaluation and LLM Parser Tests', () => {
     const callArgs = mockGenerateContent.mock.calls[0][0];
     
     // Assert prompt format and contents
-    expect(callArgs.contents).toContain('Analyze the following text reported by ground staff');
+    expect(callArgs.config.systemInstruction).toContain('Analyze the following text reported by ground staff');
     expect(callArgs.contents).toContain('Gate A queue is huge and crowded, need help');
     
     // Assert response schemas are present
@@ -93,7 +93,7 @@ describe('Prompt Evaluation and LLM Parser Tests', () => {
     const callArgs = mockGenerateContent.mock.calls[0][0];
     
     // Assert prompt contents
-    expect(callArgs.contents).toContain('AI Operations Copilot');
+    expect(callArgs.config.systemInstruction).toContain('AI Operations Copilot');
     expect(callArgs.contents).toContain('Gate A');
     
     // Assert result is sorted by priority ascending (priority 1 first, then 2)

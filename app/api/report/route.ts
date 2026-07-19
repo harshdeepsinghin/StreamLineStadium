@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabase, Incident } from '@/lib/supabaseClient';
+import { supabaseAdmin, Incident } from '@/lib/supabaseClient';
 import { extractIncident, generateRecommendations } from '@/lib/gemini';
 
 const schema = z.object({
@@ -20,9 +20,12 @@ export async function POST(request: Request) {
     }
 
     const { text } = parsed.data;
+    
+    // Sanitize input to prevent stored XSS attacks
+    const sanitizedText = text.replace(/<[^>]*>/g, '').trim();
 
     // Fetch recent incidents (latest 10 active) to serve as prompt context
-    const { data: recentIncidentsData, error: fetchError } = await supabase
+    const { data: recentIncidentsData, error: fetchError } = await supabaseAdmin
       .from('incidents')
       .select('category, location, timestamp')
       .eq('active', true)
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     }));
 
     // 1. Extract Structured Incident from raw text
-    const structuredData = await extractIncident(text);
+    const structuredData = await extractIncident(sanitizedText);
 
     // 2. Generate recommendations based on the new incident and recent history
     const recommendations = await generateRecommendations(structuredData, recentIncidents);
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
     const timestampStr = new Date().toISOString();
     const newIncident: Incident = {
       id: newId,
-      text,
+      text: sanitizedText,
       ...structuredData,
       status: 'reported',
       active: true,
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
     };
 
     // Save to Supabase
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('incidents')
       .insert(newIncident);
 
